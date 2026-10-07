@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Image Evaluation Study</title>
+<style>
+  :root {
+    --box-size: 300px;
+  }
+
+  body {
+    margin: 0;
+    padding: 20px 40px;
+    background: #ffffff;
+    color: #000000;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 18px;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* ---------- Start screen and message screen ---------- */
+  .narrow {
+    max-width: 640px;
+    margin: 60px auto;
+    line-height: 1.5;
+  }
+
+  .narrow h1 {
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+
+  #emailInput {
+    font-family: inherit;
+    font-size: 18px;
+    padding: 6px 8px;
+    width: 280px;
+    max-width: 100%;
+    border: 1px solid #888888;
+  }
+
+  .plain-button {
+    font-family: inherit;
+    font-size: 16px;
+    padding: 6px 18px;
+    background: #d9d9d9;
+    border: 1px solid #aaaaaa;
+    color: #000000;
+    cursor: pointer;
+  }
+
+  .plain-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .error-text {
+    color: #b00020;
+    margin-top: 12px;
+  }
+
+  .info-text {
+    color: #444444;
+    margin-top: 12px;
+  }
+
+  /* ---------- Task screen ---------- */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .question {
+    font-weight: bold;
+    font-size: 24px;
+  }
+
+  #submitButton {
+    font-size: 14px;
+    padding: 5px 16px;
+  }
+
+  .task-label {
+    text-align: center;
+    font-weight: bold;
+    font-size: 22px;
+    margin: 24px 0 24px 0;
+  }
+
+  .row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 28px;
+  }
+
+  .candidates {
+    display: flex;
+    gap: 24px;
+  }
+
+  .divider {
+    width: 1px;
+    align-self: stretch;
+    min-height: var(--box-size);
+    background: #aaaaaa;
+  }
+
+  .figure {
+    text-align: center;
+  }
+
+  /* Both candidates always reserve a 4px border so nothing jumps when one is selected. */
+  .candidate {
+    border: 4px solid transparent;
+    padding: 4px;
+    cursor: pointer;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .candidate.selected {
+    border: 4px solid #2e7d32;
+  }
+
+  .image-box {
+    width: var(--box-size);
+    height: var(--box-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f4;
+    overflow: hidden;
+  }
+
+  .image-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    -webkit-user-drag: none;
+  }
+
+  .image-error {
+    padding: 12px;
+    font-size: 15px;
+    color: #b00020;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .caption {
+    font-weight: bold;
+    margin-top: 8px;
+  }
+
+  .instructions {
+    text-align: center;
+    font-size: 14px;
+    color: #333333;
+    margin-top: 28px;
+    line-height: 1.6;
+  }
+
+  .nav-buttons {
+    text-align: center;
+    margin-top: 14px;
+  }
+
+  .nav-buttons button {
+    font-size: 14px;
+    padding: 4px 14px;
+    margin: 0 6px;
+  }
+
+  #taskMessage {
+    text-align: center;
+    min-height: 22px;
+    font-size: 14px;
+  }
+
+  /* ---------- Phones ---------- */
+  @media (max-width: 700px) {
+    :root {
+      --box-size: 40vw;
+    }
+
+    body {
+      padding: 14px 12px;
+    }
+
+    .row {
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .candidates {
+      gap: 8px;
+    }
+
+    .divider {
+      width: 80%;
+      height: 1px;
+      min-height: 0;
+      align-self: center;
+    }
+
+    .question {
+      font-size: 19px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= START SCREEN ======================= -->
+<div id="startScreen" class="narrow">
+  <h1>Image Evaluation Study</h1>
+  <p>
+    In this study you will compare pairs of images. For each task you see one reference image
+    and two candidate images, and you choose the candidate that better answers the question shown
+    at the top of the page. There are <span id="startTaskCount"></span> tasks in total.
+    Your progress is saved in this browser, so you can close the page and continue later
+    with the same email address on the same device. Each participant can evaluate only once.
+  </p>
+  <p>
+    <input id="emailInput" type="email" placeholder="your email address" autocomplete="email">
+    <button id="startButton" class="plain-button" type="button">Start</button>
+  </p>
+  <div id="startMessage"></div>
+</div>
+
+<!-- ======================= TASK SCREEN ======================= -->
+<div id="taskScreen" class="hidden">
+  <div class="header">
+    <div id="questionText" class="question"></div>
+    <button id="submitButton" class="plain-button" type="button" disabled>Submit</button>
+  </div>
+
+  <div id="taskLabel" class="task-label"></div>
+
+  <div class="row">
+    <div class="figure">
+      <div id="referenceBox" class="image-box"></div>
+      <div class="caption">Reference</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="candidates">
+      <div id="candidate1" class="candidate">
+        <div id="candidate1Box" class="image-box"></div>
+        <div class="caption">Candidate 1</div>
+      </div>
+      <div id="candidate2" class="candidate">
+        <div id="candidate2Box" class="image-box"></div>
+        <div class="caption">Candidate 2</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <div>Navigate: Press ← for previous image, → for next image.</div>
+    <div>Select: Press 1 for the left and 2 for the right image.</div>
+  </div>
+
+  <div class="nav-buttons">
+    <button id="previousButton" class="plain-button" type="button">Previous</button>
+    <button id="nextButton" class="plain-button" type="button">Next</button>
+  </div>
+
+  <div id="taskMessage"></div>
+</div>
+
+<!-- ======================= MESSAGE SCREEN ======================= -->
+<div id="messageScreen" class="narrow hidden">
+  <p id="messageText"></p>
+</div>
+
+<script src="cases.js"></script>
+<script>
+// =====================================================================
+// CONFIGURATION  (TOTAL_CASES and REPEAT_CASES must match Code.gs)
+// =====================================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDaWWwqIOIfCBSa4ehpFhxQUzsszUMzDMC94Xs6U_HVPNIEAlxbZY_qCtHLWH9eS9D/exec";
+const TOTAL_CASES = 100;
+const REPEAT_CASES = 100;
+const TOTAL_TASKS = TOTAL_CASES + REPEAT_CASES;
+const MIN_REPEAT_GAP = 10;
+const QUESTION_TEXT = "Which image looks more realistic?";
+
+const STORAGE_PREFIX = "inpainting_eval_v2:";
+const LAST_EMAIL_KEY = "inpainting_eval_last_email";
+
+// Single place that decides how a Drive file id becomes an image URL.
+function imageUrl(fileId) {
+  return "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1000";
+}
+
+// =====================================================================
+// PAGE ELEMENTS
+// =====================================================================
+const startScreen = document.getElementById("startScreen");
+const taskScreen = document.getElementById("taskScreen");
+const messageScreen = document.getElementById("messageScreen");
+const messageText = document.getElementById("messageText");
+const emailInput = document.getElementById("emailInput");
+const startButton = document.getElementById("startButton");
+const startMessage = document.getElementById("startMessage");
+const startTaskCount = document.getElementById("startTaskCount");
+const questionTextElement = document.getElementById("questionText");
+const submitButton = document.getElementById("submitButton");
+const taskLabel = document.getElementById("taskLabel");
+const referenceBox = document.getElementById("referenceBox");
+const candidate1 = document.getElementById("candidate1");
+const candidate2 = document.getElementById("candidate2");
+const candidate1Box = document.getElementById("candidate1Box");
+const candidate2Box = document.getElementById("candidate2Box");
+const previousButton = document.getElementById("previousButton");
+const nextButton = document.getElementById("nextButton");
+const taskMessage = document.getElementById("taskMessage");
+
+// =====================================================================
+// STATE
+// =====================================================================
+// state = { email, tasks: [ { task_index, case_id, model1_slot } ], answers: { task_index: "model1"|"model2" }, currentIndex }
+let state = null;
+let isSubmitting = false;
+const caseById = {};
+const preloadCache = [];
+
+// =====================================================================
+// SMALL HELPERS
+// =====================================================================
+function normalizeEmail(rawEmail) {
+  return String(rawEmail).trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  const pattern = /^[a-z0-9][a-z0-9._%+\-]*@[a-z0-9.\-]+\.[a-z]{2,}$/;
+  return pattern.test(email);
+}
+
+function shuffleInPlace(items) {
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = items[i];
+    items[i] = items[j];
+    items[j] = temp;
+  }
+  return items;
+}
+
+function storageKeyFor(email) {
+  return STORAGE_PREFIX + email;
+}
+
+function showScreen(screenName) {
+  startScreen.classList.add("hidden");
+  taskScreen.classList.add("hidden");
+  messageScreen.classList.add("hidden");
+  if (screenName === "start") {
+    startScreen.classList.remove("hidden");
+  } else if (screenName === "task") {
+    taskScreen.classList.remove("hidden");
+  } else {
+    messageScreen.classList.remove("hidden");
+  }
+}
+
+function showMessageScreen(text) {
+  messageText.textContent = text;
+  showScreen("message");
+}
+
+// =====================================================================
+// CONFIGURATION CHECK
+// =====================================================================
+function validateConfiguration() {
+  if (APPS_SCRIPT_URL.indexOf("PASTE_YOUR") !== -1) {
+    return "Configuration error: set APPS_SCRIPT_URL at the top of index.html.";
+  }
+  if (typeof CASES === "undefined" || !Array.isArray(CASES)) {
+    return "Configuration error: cases.js did not load.";
+  }
+  if (CASES.length !== TOTAL_CASES) {
+    return "Configuration error: cases.js has " + CASES.length + " cases but TOTAL_CASES is " + TOTAL_CASES + ".";
+  }
+  if (REPEAT_CASES < 0 || REPEAT_CASES > TOTAL_CASES) {
+    return "Configuration error: REPEAT_CASES must be between 0 and TOTAL_CASES.";
+  }
+  for (let i = 0; i < CASES.length; i++) {
+    const item = CASES[i];
+    const idIsInteger = typeof item.id === "number" && Math.floor(item.id) === item.id;
+    if (!idIsInteger || item.id < 1 || item.id > TOTAL_CASES) {
+      return "Configuration error: every case id must be an integer from 1 to " + TOTAL_CASES + ".";
+    }
+    if (caseById[item.id] !== undefined) {
+      return "Configuration error: duplicate case id " + item.id + " in cases.js.";
+    }
+    if (!item.input || !item.model1 || !item.model2) {
+      return "Configuration error: case " + item.id + " is missing a file id.";
+    }
+    caseById[item.id] = item;
+  }
+  return "";
+}
+
+// =====================================================================
+// TASK SEQUENCE
+// =====================================================================
+// Returns the first position at which a repeated case appears less than
+// MIN_REPEAT_GAP positions after its first appearance, or null if there is none.
+function findGapViolation(caseIdsInOrder) {
+  const firstPositionByCase = {};
+  for (let position = 0; position < caseIdsInOrder.length; position++) {
+    const caseId = caseIdsInOrder[position];
+    if (firstPositionByCase[caseId] === undefined) {
+      firstPositionByCase[caseId] = position;
+    } else {
+      const gap = position - firstPositionByCase[caseId];
+      if (gap < MIN_REPEAT_GAP) {
+        return { earlier: firstPositionByCase[caseId], later: position };
+      }
+    }
+  }
+  return null;
+}
+
+function buildTaskSequence() {
+  const allCaseIds = [];
+  for (let i = 0; i < CASES.length; i++) {
+    allCaseIds.push(CASES[i].id);
+  }
+
+  // Choose which cases are shown a second time.
+  const shuffledForRepeats = shuffleInPlace(allCaseIds.slice());
+  const repeatedCaseIds = shuffledForRepeats.slice(0, REPEAT_CASES);
+
+  // One token per task, then a random order.
+  const tokens = allCaseIds.concat(repeatedCaseIds);
+  shuffleInPlace(tokens);
+
+  // Repair: move the later copy of any too-close pair to a random position until none remain.
+  let attempts = 0;
+  const maxAttempts = 200000;
+  let violation = findGapViolation(tokens);
+  while (violation !== null && attempts < maxAttempts) {
+    let swapTarget = Math.floor(Math.random() * tokens.length);
+    while (swapTarget === violation.later || swapTarget === violation.earlier) {
+      swapTarget = Math.floor(Math.random() * tokens.length);
+    }
+    const temp = tokens[violation.later];
+    tokens[violation.later] = tokens[swapTarget];
+    tokens[swapTarget] = temp;
+    attempts++;
+    violation = findGapViolation(tokens);
+  }
+  if (violation !== null) {
+    throw new Error("Could not build a task sequence that respects MIN_REPEAT_GAP.");
+  }
+
+  // Each task independently decides which slot model-1 appears in.
+  const tasks = [];
+  for (let position = 0; position < tokens.length; position++) {
+    let model1Slot = 2;
+    if (Math.random() < 0.5) {
+      model1Slot = 1;
+    }
+    tasks.push({
+      task_index: position + 1,
+      case_id: tokens[position],
+      model1_slot: model1Slot
+    });
+  }
+  return tasks;
+}
+
+function getModelInSlot(task, slot) {
+  if (slot === 1) {
+    if (task.model1_slot === 1) {
+      return "model1";
+    }
+    return "model2";
+  }
+  if (task.model1_slot === 1) {
+    return "model2";
+  }
+  return "model1";
+}
+
+// =====================================================================
+// LOCAL STORAGE
+// =====================================================================
+function saveState() {
+  if (state === null) {
+    return;
+  }
+  try {
+    const toSave = {
+      total_cases: TOTAL_CASES,
+      repeat_cases: REPEAT_CASES,
+      tasks: state.tasks,
+      answers: state.answers,
+      currentIndex: state.currentIndex
+    };
+    localStorage.setItem(storageKeyFor(state.email), JSON.stringify(toSave));
+  } catch (error) {
+    // Storage may be blocked (private mode). The study still works, only resume is lost.
+  }
+}
+
+function loadSavedState(email) {
+  let rawText = null;
+  try {
+    rawText = localStorage.getItem(storageKeyFor(email));
+  } catch (error) {
+    return null;
+  }
+  if (rawText === null) {
+    return null;
+  }
+  try {
+    const saved = JSON.parse(rawText);
+    if (saved.total_cases !== TOTAL_CASES || saved.repeat_cases !== REPEAT_CASES) {
+      return null;
+    }
+    if (!Array.isArray(saved.tasks) || saved.tasks.length !== TOTAL_TASKS) {
+      return null;
+    }
+    for (let i = 0; i < saved.tasks.length; i++) {
+      const task = saved.tasks[i];
+      if (task.task_index !== i + 1 || caseById[task.case_id] === undefined) {
+        return null;
+      }
+      if (task.model1_slot !== 1 && task.model1_slot !== 2) {
+        return null;
+      }
+    }
+    let currentIndex = saved.currentIndex;
+    if (typeof currentIndex !== "number" || currentIndex < 0 || currentIndex >= TOTAL_TASKS) {
+      currentIndex = 0;
+    }
+    return {
+      email: email,
+      tasks: saved.tasks,
+      answers: saved.answers || {},
+      currentIndex: currentIndex
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function clearSavedState(email) {
+  try {
+    localStorage.removeItem(storageKeyFor(email));
+  } catch (error) {
+    // Nothing to do.
+  }
+}
+
+// =====================================================================
+// IMAGES
+// =====================================================================
+function loadImageInto(box, fileId, retryNumber) {
+  box.innerHTML = "";
+  const img = document.createElement("img");
+  img.alt = "";
+  img.draggable = false;
+  img.onerror = function () {
+    // Ignore errors from an image that is no longer in the box (user moved to another task).
+    if (box.firstChild === img) {
+      showImageError(box, fileId, retryNumber);
+    }
+  };
+  let source = imageUrl(fileId);
+  if (retryNumber > 0) {
+    source = source + "&retry=" + Date.now();
+  }
+  img.src = source;
+  box.appendChild(img);
+}
+
+function showImageError(box, fileId, retryNumber) {
+  box.innerHTML = "";
+  const message = document.createElement("div");
+  message.className = "image-error";
+  message.textContent = "Image failed to load, click to retry";
+  message.addEventListener("click", function (event) {
+    event.stopPropagation();
+    loadImageInto(box, fileId, retryNumber + 1);
+  });
+  box.appendChild(message);
+}
+
+function preloadTask(taskPosition) {
+  if (state === null || taskPosition < 0 || taskPosition >= state.tasks.length) {
+    return;
+  }
+  const caseData = caseById[state.tasks[taskPosition].case_id];
+  const fileIds = [caseData.input, caseData.model1, caseData.model2];
+  for (let i = 0; i < fileIds.length; i++) {
+    const preloadImage = new Image();
+    preloadImage.src = imageUrl(fileIds[i]);
+    preloadCache.push(preloadImage);
+  }
+}
+
+// =====================================================================
+// TASK SCREEN
+// =====================================================================
+function currentTask() {
+  return state.tasks[state.currentIndex];
+}
+
+function isAnswered(task) {
+  return state.answers[task.task_index] !== undefined;
+}
+
+function countAnswered() {
+  let count = 0;
+  for (let i = 0; i < state.tasks.length; i++) {
+    if (isAnswered(state.tasks[i])) {
+      count++;
+    }
+  }
+  return count;
+}
+
+function updateSelectionAndButtons() {
+  const task = currentTask();
+  const chosenModel = state.answers[task.task_index];
+
+  candidate1.classList.remove("selected");
+  candidate2.classList.remove("selected");
+  if (chosenModel !== undefined) {
+    if (getModelInSlot(task, 1) === chosenModel) {
+      candidate1.classList.add("selected");
+    } else {
+      candidate2.classList.add("selected");
+    }
+  }
+
+  previousButton.disabled = state.currentIndex === 0;
+  nextButton.disabled = state.currentIndex >= TOTAL_TASKS - 1 || !isAnswered(task);
+  submitButton.disabled = isSubmitting || countAnswered() < TOTAL_TASKS;
+}
+
+function renderTask() {
+  const task = currentTask();
+  const caseData = caseById[task.case_id];
+
+  taskLabel.textContent = "Task " + (state.currentIndex + 1) + "/" + TOTAL_TASKS;
+  taskMessage.textContent = "";
+
+  const leftModel = getModelInSlot(task, 1);
+  const rightModel = getModelInSlot(task, 2);
+
+  loadImageInto(referenceBox, caseData.input, 0);
+  loadImageInto(candidate1Box, caseData[leftModel], 0);
+  loadImageInto(candidate2Box, caseData[rightModel], 0);
+
+  updateSelectionAndButtons();
+  preloadTask(state.currentIndex + 1);
+}
+
+function selectSlot(slot) {
+  if (state === null || isSubmitting) {
+    return;
+  }
+  const task = currentTask();
+  state.answers[task.task_index] = getModelInSlot(task, slot);
+  taskMessage.textContent = "";
+  saveState();
+  updateSelectionAndButtons();
+}
+
+function goToPrevious() {
+  if (state === null || isSubmitting || state.currentIndex === 0) {
+    return;
+  }
+  state.currentIndex = state.currentIndex - 1;
+  saveState();
+  renderTask();
+}
+
+function goToNext() {
+  if (state === null || isSubmitting) {
+    return;
+  }
+  if (state.currentIndex >= TOTAL_TASKS - 1) {
+    return;
+  }
+  if (!isAnswered(currentTask())) {
+    taskMessage.textContent = "Please choose a candidate before continuing.";
+    return;
+  }
+  state.currentIndex = state.currentIndex + 1;
+  saveState();
+  renderTask();
+}
+
+function onKeyDown(event) {
+  if (taskScreen.classList.contains("hidden")) {
+    return;
+  }
+  const activeElement = document.activeElement;
+  if (activeElement && activeElement.tagName === "INPUT") {
+    return;
+  }
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  if (event.key === "ArrowLeft") {
+    event.preventDefault();
+    goToPrevious();
+  } else if (event.key === "ArrowRight") {
+    event.preventDefault();
+    goToNext();
+  } else if (event.key === "1") {
+    selectSlot(1);
+  } else if (event.key === "2") {
+    selectSlot(2);
+  }
+}
+
+// =====================================================================
+// BACKEND CALLS
+// =====================================================================
+async function checkEmailOnServer(email) {
+  const url = APPS_SCRIPT_URL + "?action=check&email=" + encodeURIComponent(email);
+  const response = await fetch(url);
+  return await response.json();
+}
+
+async function submitToServer() {
+  const answers = [];
+  for (let i = 0; i < state.tasks.length; i++) {
+    const task = state.tasks[i];
+    answers.push({
+      task_index: task.task_index,
+      case_id: task.case_id,
+      chosen_model: state.answers[task.task_index],
+      model1_slot: task.model1_slot
+    });
+  }
+  const payload = { email: state.email, answers: answers };
+
+  // No custom headers: the browser sends text/plain, so there is no CORS preflight.
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+  return await response.json();
+}
+
+// =====================================================================
+// EVENT HANDLERS
+// =====================================================================
+async function onStartClicked() {
+  startMessage.className = "";
+  startMessage.textContent = "";
+
+  const email = normalizeEmail(emailInput.value);
+  if (!isValidEmail(email)) {
+    startMessage.className = "error-text";
+    startMessage.textContent = "Please enter a valid email address.";
+    return;
+  }
+
+  startButton.disabled = true;
+  startMessage.className = "info-text";
+  startMessage.textContent = "Checking...";
+
+  let checkResult = null;
+  try {
+    checkResult = await checkEmailOnServer(email);
+  } catch (error) {
+    startButton.disabled = false;
+    startMessage.className = "error-text";
+    startMessage.textContent = "Could not reach the server. Please check your connection and try again.";
+    return;
+  }
+
+  if (!checkResult || checkResult.ok !== true) {
+    startButton.disabled = false;
+    startMessage.className = "error-text";
+    startMessage.textContent = (checkResult && checkResult.message) ? checkResult.message : "Unexpected server response.";
+    return;
+  }
+
+  if (checkResult.alreadySubmitted === true) {
+    showMessageScreen("This email has already been used. Each participant can evaluate only once.");
+    return;
+  }
+
+  let loadedState = loadSavedState(email);
+  if (loadedState === null) {
+    try {
+      loadedState = {
+        email: email,
+        tasks: buildTaskSequence(),
+        answers: {},
+        currentIndex: 0
+      };
+    } catch (error) {
+      startButton.disabled = false;
+      startMessage.className = "error-text";
+      startMessage.textContent = error.message;
+      return;
+    }
+  }
+  state = loadedState;
+  saveState();
+
+  try {
+    localStorage.setItem(LAST_EMAIL_KEY, email);
+  } catch (error) {
+    // Not important.
+  }
+
+  showScreen("task");
+  renderTask();
+  preloadTask(state.currentIndex + 1);
+}
+
+async function onSubmitClicked() {
+  if (state === null || isSubmitting || countAnswered() < TOTAL_TASKS) {
+    return;
+  }
+  isSubmitting = true;
+  submitButton.disabled = true;
+  taskMessage.className = "";
+  taskMessage.textContent = "Submitting...";
+
+  let result = null;
+  try {
+    result = await submitToServer();
+  } catch (error) {
+    isSubmitting = false;
+    updateSelectionAndButtons();
+    taskMessage.style.color = "#b00020";
+    taskMessage.textContent = "Could not reach the server. Your answers are saved here, please try Submit again.";
+    return;
+  }
+
+  isSubmitting = false;
+  if (result && result.ok === true) {
+    clearSavedState(state.email);
+    state = null;
+    showMessageScreen("Thank you! Your responses have been recorded. You can close this page.");
+  } else {
+    updateSelectionAndButtons();
+    taskMessage.style.color = "#b00020";
+    if (result && result.message) {
+      taskMessage.textContent = result.message;
+    } else {
+      taskMessage.textContent = "Submission failed. Please try again.";
+    }
+  }
+}
+
+// =====================================================================
+// START UP
+// =====================================================================
+function initializePage() {
+  questionTextElement.textContent = QUESTION_TEXT;
+  startTaskCount.textContent = String(TOTAL_TASKS);
+
+  const configurationError = validateConfiguration();
+  if (configurationError !== "") {
+    startButton.disabled = true;
+    emailInput.disabled = true;
+    startMessage.className = "error-text";
+    startMessage.textContent = configurationError;
+    return;
+  }
+
+  try {
+    const lastEmail = localStorage.getItem(LAST_EMAIL_KEY);
+    if (lastEmail) {
+      emailInput.value = lastEmail;
+    }
+  } catch (error) {
+    // Not important.
+  }
+
+  startButton.addEventListener("click", onStartClicked);
+  emailInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      onStartClicked();
+    }
+  });
+  candidate1.addEventListener("click", function () { selectSlot(1); });
+  candidate2.addEventListener("click", function () { selectSlot(2); });
+  previousButton.addEventListener("click", goToPrevious);
+  nextButton.addEventListener("click", goToNext);
+  submitButton.addEventListener("click", onSubmitClicked);
+  document.addEventListener("keydown", onKeyDown);
+}
+
+initializePage();
+</script>
+</body>
+</html>
