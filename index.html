@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Image Evaluation Study</title>
+<title>EDII User Study</title>
 <style>
   :root {
     --bg: #f1f1ef;
@@ -36,8 +36,6 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-
-  body.no-scroll { overflow: hidden; }
 
   .hidden { display: none !important; }
 
@@ -216,11 +214,22 @@
     padding: 12px 24px;
   }
 
-  .question {
-    font-family: var(--serif);
-    font-size: 22px;
+  .study-name {
+    font-size: 14px;
     font-weight: 600;
-    line-height: 1.25;
+    letter-spacing: .02em;
+    color: var(--muted);
+  }
+
+  .question {
+    margin: 4px 0 8px;
+    text-align: center;
+    font-family: var(--serif);
+    font-size: clamp(30px, 3.4vw, 42px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -.012em;
+    color: var(--ink);
   }
 
   .top-actions { display: flex; align-items: center; gap: 16px; flex: none; }
@@ -249,7 +258,7 @@
 
   .task-label {
     text-align: center;
-    margin: 0 0 14px;
+    margin: 0 0 18px;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: .04em;
@@ -369,30 +378,6 @@
   .pick-badge svg { width: 16px; height: 16px; }
   .candidate.selected .pick-badge { opacity: 1; transform: scale(1); }
 
-  .zoom-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    color: var(--ink);
-    background: rgba(255,255,255,.92);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-    cursor: zoom-in;
-    transition: opacity .15s, background-color .15s;
-  }
-  .zoom-btn:hover { background: #fff; }
-  .zoom-btn svg { width: 17px; height: 17px; }
-  @media (hover: hover) {
-    .zoom-btn { opacity: 0; }
-    .frame:hover .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
-  }
-
   .caption {
     display: flex;
     align-items: center;
@@ -431,52 +416,9 @@
   }
   .hints span { display: inline-flex; align-items: center; gap: 6px; }
 
-  /* ---------- Lightbox ---------- */
-  .lightbox {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 24px;
-    background: rgba(18, 19, 20, .88);
-    animation: fade .15s ease;
-  }
-  .lightbox img {
-    max-width: min(92vw, 1000px);
-    max-height: 80vh;
-    background: #e8e8e5;
-    border-radius: 6px;
-    object-fit: contain;
-  }
-  .lightbox-caption { color: #e9e9e6; font-size: 14px; font-weight: 600; }
-  .lightbox-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    color: #fff;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    cursor: pointer;
-  }
-  .lightbox-close:hover { background: rgba(255,255,255,.22); }
-  .lightbox-close svg { width: 18px; height: 18px; }
-  .lightbox :focus-visible { outline-color: #fff; }
-
   /* ---------- Animations ---------- */
   @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
   @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes nudge {
     0%, 100% { box-shadow: 0 0 0 0 rgba(30,107,75,0); }
     30% { box-shadow: 0 0 0 5px rgba(30,107,75,.28); }
@@ -491,7 +433,8 @@
     :root { --box-size: clamp(130px, calc((100vw - 84px) / 2), 280px); }
 
     .topbar-inner { padding: 10px 14px; }
-    .question { font-size: 18px; }
+    .question { font-size: 25px; margin: 2px 0 6px; }
+    .study-name { font-size: 13px; }
     .answered { display: none; }
     .btn { padding: 11px 16px; }
 
@@ -529,7 +472,7 @@
 <div id="startScreen" class="narrow">
   <div class="panel">
     <p class="eyebrow">Research study</p>
-    <h1>Image Evaluation Study</h1>
+    <h1>EDII User Study</h1>
     <p>
       In this study you will compare pairs of images. For each task you see one reference image
       and two candidate images, and you choose the candidate that better answers the question shown
@@ -554,7 +497,7 @@
 <div id="taskScreen" class="hidden">
   <header class="topbar">
     <div class="topbar-inner">
-      <div id="questionText" class="question"></div>
+      <div class="study-name">EDII User Study</div>
       <div class="top-actions">
         <div class="answered"><strong id="answeredCount">0</strong> / <span id="totalCount"></span> answered</div>
         <button id="submitButton" class="btn btn-accent" type="button" disabled>Submit</button>
@@ -566,6 +509,7 @@
   </header>
 
   <main class="stage">
+    <h2 id="questionText" class="question"></h2>
     <div id="taskLabel" class="task-label"></div>
 
     <div class="tray">
@@ -573,9 +517,6 @@
         <div class="figure">
           <div class="frame">
             <div id="referenceBox" class="image-box"></div>
-            <button class="zoom-btn" type="button" data-box="referenceBox" data-label="Reference" aria-label="Enlarge reference image">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
-            </button>
           </div>
           <div class="caption">Reference</div>
         </div>
@@ -587,9 +528,6 @@
             <div class="frame">
               <div id="candidate1Box" class="image-box"></div>
               <span class="pick-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-              <button class="zoom-btn" type="button" data-box="candidate1Box" data-label="Candidate 1" aria-label="Enlarge candidate 1">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
-              </button>
             </div>
             <div class="caption">Candidate 1</div>
           </div>
@@ -597,9 +535,6 @@
             <div class="frame">
               <div id="candidate2Box" class="image-box"></div>
               <span class="pick-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-              <button class="zoom-btn" type="button" data-box="candidate2Box" data-label="Candidate 2" aria-label="Enlarge candidate 2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg>
-              </button>
             </div>
             <div class="caption">Candidate 2</div>
           </div>
@@ -629,15 +564,6 @@
   <div class="panel">
     <p id="messageText"></p>
   </div>
-</div>
-
-<!-- ======================= IMAGE ENLARGE (view only) ======================= -->
-<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Enlarged image">
-  <button id="lightboxClose" class="lightbox-close" type="button" aria-label="Close">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-  </button>
-  <img id="lightboxImage" alt="">
-  <div id="lightboxCaption" class="lightbox-caption"></div>
 </div>
 
 <script src="cases.js"></script>
@@ -689,11 +615,6 @@ const progressFill = document.getElementById("progressFill");
 const answeredCountElement = document.getElementById("answeredCount");
 const totalCountElement = document.getElementById("totalCount");
 const candidatesWrap = document.getElementById("candidates");
-const lightbox = document.getElementById("lightbox");
-const lightboxImage = document.getElementById("lightboxImage");
-const lightboxCaption = document.getElementById("lightboxCaption");
-const lightboxClose = document.getElementById("lightboxClose");
-let lightboxReturnFocus = null;
 
 // =====================================================================
 // STATE
@@ -1264,59 +1185,9 @@ function nudgeCandidates() {
   candidatesWrap.classList.add("nudge");
 }
 
-function openLightbox(box, label) {
-  const loadedImage = box.querySelector("img.loaded");
-  if (loadedImage === null) {
-    return;
-  }
-  lightboxReturnFocus = document.activeElement;
-  lightboxImage.src = loadedImage.src;
-  lightboxCaption.textContent = label;
-  lightbox.classList.remove("hidden");
-  document.body.classList.add("no-scroll");
-  lightboxClose.focus();
-}
-
-function closeLightbox() {
-  lightbox.classList.add("hidden");
-  lightboxImage.removeAttribute("src");
-  document.body.classList.remove("no-scroll");
-  if (lightboxReturnFocus !== null && typeof lightboxReturnFocus.focus === "function") {
-    lightboxReturnFocus.focus();
-  }
-  lightboxReturnFocus = null;
-}
-
 function initializeUiEnhancements() {
   totalCountElement.textContent = String(TOTAL_TASKS);
   progressBar.setAttribute("aria-valuemax", String(TOTAL_TASKS));
-
-  const zoomButtons = document.querySelectorAll(".zoom-btn");
-  for (let i = 0; i < zoomButtons.length; i++) {
-    const zoomButton = zoomButtons[i];
-    zoomButton.addEventListener("click", function (event) {
-      event.stopPropagation();
-      openLightbox(document.getElementById(zoomButton.getAttribute("data-box")), zoomButton.getAttribute("data-label"));
-    });
-  }
-
-  lightboxClose.addEventListener("click", closeLightbox);
-  lightbox.addEventListener("click", function (event) {
-    if (event.target === lightbox) {
-      closeLightbox();
-    }
-  });
-
-  // While the enlarged view is open, no study shortcut (1, 2, arrows) may reach the page.
-  document.addEventListener("keydown", function (event) {
-    if (lightbox.classList.contains("hidden")) {
-      return;
-    }
-    event.stopImmediatePropagation();
-    if (event.key === "Escape") {
-      closeLightbox();
-    }
-  }, true);
 
   // Keyboard access for the two candidate cards (Enter or Space).
   const candidateCards = [candidate1, candidate2];
