@@ -572,14 +572,14 @@
 // CONFIGURATION  (TOTAL_CASES and REPEAT_CASES must match Code.gs)
 // =====================================================================
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDaWWwqIOIfCBSa4ehpFhxQUzsszUMzDMC94Xs6U_HVPNIEAlxbZY_qCtHLWH9eS9D/exec";
-const TOTAL_CASES = 60;
-const REPEAT_CASES = 60;
+const TOTAL_CASES = 100;
+const REPEAT_CASES = 100;
 const TOTAL_TASKS = TOTAL_CASES + REPEAT_CASES;
 const MIN_REPEAT_GAP = 10;
 const QUESTION_TEXT = "Which image looks more realistic?";
 
-// Bumped from v2 so any saved progress from the old 100-case study is ignored.
-const STORAGE_PREFIX = "inpainting_eval_v3:";
+// Bumped from v3 so any saved progress from the old 60-case study is ignored.
+const STORAGE_PREFIX = "inpainting_eval_v4:";
 const LAST_EMAIL_KEY = "inpainting_eval_last_email";
 
 // Single place that decides how a Drive file id becomes an image URL.
